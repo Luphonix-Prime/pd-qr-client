@@ -1,0 +1,99 @@
+{% extends "base.html" %}
+
+{% block title %}Welcome to TrustTags{% endblock %}
+
+{% block content %}
+<div class="container-fluid min-vh-100 d-flex align-items-center justify-content-center">
+    <div class="row w-100">
+        <div class="col-lg-6 col-md-8 col-sm-10 mx-auto">
+            <div class="card shadow-lg border-0">
+                <div class="card-body p-5 text-center">
+                    <div class="mb-4">
+                        <i class="fas fa-cube fa-4x text-primary mb-3"></i>
+                        <h1 class="display-4 fw-bold text-primary">TrustTags</h1>
+                        <p class="lead text-muted">Advanced Product Tracking & Management System</p>
+                    </div>
+                    
+                    <div class="mb-4">
+                        <h3 class="text-dark mb-3">Key Features</h3>
+                        <div class="row">
+                            <div class="col-md-6 mb-3">
+                                <div class="feature-item">
+                                    <i class="fas fa-qrcode fa-2x text-primary mb-2"></i>
+                                    <h5>QR Code Generation</h5>
+                                    <p class="text-muted small">Generate unique QR codes for product tracking</p>
+                                </div>
+                            </div>
+                            <div class="col-md-6 mb-3">
+                                <div class="feature-item">
+                                    <i class="fas fa-chart-line fa-2x text-primary mb-2"></i>
+                                    <h5>Analytics & Reports</h5>
+                                    <p class="text-muted small">Comprehensive stock and batch reporting</p>
+                                </div>
+                            </div>
+                            <div class="col-md-6 mb-3">
+                                <div class="feature-item">
+                                    <i class="fas fa-boxes fa-2x text-primary mb-2"></i>
+                                    <h5>Batch Management</h5>
+                                    <p class="text-muted small">Track products through manufacturing batches</p>
+                                </div>
+                            </div>
+                            <div class="col-md-6 mb-3">
+                                <div class="feature-item">
+                                    <i class="fas fa-shield-alt fa-2x text-primary mb-2"></i>
+                                    <h5>Secure Authentication</h5>
+                                    <p class="text-muted small">Role-based access control system</p>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                    
+                    <div class="d-grid gap-2 d-md-flex justify-content-md-center">
+                        <a href="{{ url_for('auth.login') }}" class="btn btn-primary btn-lg me-md-3">
+                            <i class="fas fa-sign-in-alt me-2"></i>Sign In
+                        </a>
+                        <a href="{{ url_for('auth.signup') }}" class="btn btn-outline-primary btn-lg">
+                            <i class="fas fa-user-plus me-2"></i>Sign Up
+                        </a>
+                    </div>
+                    
+                    <div class="mt-4">
+                        <p class="text-muted small">
+                            Secure login powered by advanced authentication
+                        </p>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+
+<style>
+.feature-item {
+    padding: 1rem;
+    border-radius: 8px;
+    transition: transform 0.2s;
+}
+
+.feature-item:hover {
+    transform: translateY(-2px);
+    background-color: #f8f9fa;
+}
+
+.btn-primary {
+    background: linear-gradient(135deg, #7B2CBF 0%, #9D4EDD 100%);
+    border: none;
+    transition: all 0.3s ease;
+}
+
+.btn-primary:hover {
+    background: linear-gradient(135deg, #6A1B99 0%, #8B42C4 100%);
+    transform: translateY(-1px);
+    box-shadow: 0 8px 25px rgba(123, 44, 191, 0.3);
+}
+
+.text-primary {
+    color: #7B2CBF !important;
+}
+</style>
+{% endblock %}

@@ -1,0 +1,161 @@
+{% extends "base.html" %}
+
+{% block title %}Shipper Details - TrustTags{% endblock %}
+
+{% block content %}
+<div class="container-fluid">
+    <div class="d-flex justify-content-between align-items-center mb-4">
+        <h2><i class="fas fa-shipping-fast me-2"></i>Shipper Details</h2>
+        <a href="{{ url_for('shipper_codes') }}" class="btn btn-outline-primary">
+            <i class="fas fa-arrow-left me-1"></i>Back to Shippers
+        </a>
+    </div>
+    
+    <div class="row">
+        <!-- Shipper Information -->
+        <div class="col-md-6">
+            <div class="card">
+                <div class="card-header">
+                    <h5 class="mb-0"><i class="fas fa-info-circle me-2"></i>Shipper Information</h5>
+                </div>
+                <div class="card-body">
+                    <table class="table table-borderless">
+                        <tr>
+                            <th width="150">Shipper Code:</th>
+                            <td><span class="badge bg-primary fs-6">{{ shipper.shipper_code }}</span></td>
+                        </tr>
+                        <tr>
+                            <th>Shipper Name:</th>
+                            <td>{{ shipper.shipper_name or 'N/A' }}</td>
+                        </tr>
+                        <tr>
+                            <th>Total Products:</th>
+                            <td><span class="badge bg-success">{{ shipper.total_products }}</span></td>
+                        </tr>
+                        <tr>
+                            <th>Total Quantity:</th>
+                            <td><span class="badge bg-info">{{ shipper.total_quantity }}</span></td>
+                        </tr>
+                        <tr>
+                            <th>Gross Weight:</th>
+                            <td>{{ "%.2f kg"|format(shipper.gross_weight) if shipper.gross_weight else 'N/A' }}</td>
+                        </tr>
+                        <tr>
+                            <th>Status:</th>
+                            <td><span class="badge bg-secondary">{{ shipper.status }}</span></td>
+                        </tr>
+                        <tr>
+                            <th>Created:</th>
+                            <td>{{ shipper.created_at.strftime('%d-%m-%Y %H:%M:%S') }}</td>
+                        </tr>
+                    </table>
+                </div>
+            </div>
+        </div>
+        
+        <!-- QR Code -->
+        <div class="col-md-6">
+            <div class="card">
+                <div class="card-header">
+                    <h5 class="mb-0"><i class="fas fa-qrcode me-2"></i>Shipper QR Code</h5>
+                </div>
+                <div class="card-body text-center">
+                    <div id="qrCodeDisplay" style="display: inline-block;"></div>
+                    <div class="mt-3">
+                        <button class="btn btn-primary" onclick="downloadQR()">
+                            <i class="fas fa-download me-1"></i>Download QR Code
+                        </button>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+    
+    <!-- Products in Shipper -->
+    <div class="card mt-4">
+        <div class="card-header">
+            <h5 class="mb-0"><i class="fas fa-boxes me-2"></i>Products in this Shipper</h5>
+        </div>
+        <div class="card-body">
+            {% if shipper.shipper_products %}
+            <div class="table-responsive">
+                <table class="table table-hover">
+                    <thead class="table-light">
+                        <tr>
+                            <th>Product Name</th>
+                            <th>SKU ID</th>
+                            <th>GTIN</th>
+                            <th>Batch No</th>
+                            <th>Quantity</th>
+                            <th>Mfg Date</th>
+                            <th>Expiry Date</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        {% for shipper_product in shipper.shipper_products %}
+                        <tr>
+                            <td>
+                                <strong>{{ shipper_product.product.name }}</strong>
+                                {% if shipper_product.product.description %}
+                                <br><small class="text-muted">{{ shipper_product.product.description }}</small>
+                                {% endif %}
+                            </td>
+                            <td>{{ shipper_product.product.sku_id or 'N/A' }}</td>
+                            <td>{{ shipper_product.product.gtin or 'N/A' }}</td>
+                            <td>{{ shipper_product.batch.batch_no if shipper_product.batch else 'N/A' }}</td>
+                            <td><span class="badge bg-primary">{{ shipper_product.quantity }}</span></td>
+                            <td>{{ shipper_product.batch.mfg_date.strftime('%d-%m-%Y') if shipper_product.batch else 'N/A' }}</td>
+                            <td>{{ shipper_product.batch.expiry_date.strftime('%d-%m-%Y') if shipper_product.batch else 'N/A' }}</td>
+                        </tr>
+                        {% endfor %}
+                    </tbody>
+                </table>
+            </div>
+            {% else %}
+            <div class="text-center py-4">
+                <i class="fas fa-exclamation-triangle fa-2x text-muted mb-3"></i>
+                <p class="text-muted">No products found in this shipper</p>
+            </div>
+            {% endif %}
+        </div>
+    </div>
+    
+    <!-- QR Code Data -->
+    <div class="card mt-4">
+        <div class="card-header">
+            <h5 class="mb-0"><i class="fas fa-code me-2"></i>QR Code Data</h5>
+        </div>
+        <div class="card-body">
+            <div class="border rounded p-3 bg-light">
+                <pre class="mb-0" style="white-space: pre-wrap; font-size: 12px; max-height: 300px; overflow-y: auto;">{{ shipper.qr_code }}</pre>
+            </div>
+        </div>
+    </div>
+</div>
+
+<script src="https://cdn.jsdelivr.net/npm/qrcode@1.5.3/build/qrcode.min.js"></script>
+<script>
+// Generate QR code on page load
+document.addEventListener('DOMContentLoaded', function() {
+    const qrData = `{{ shipper.qr_code|replace('`', '\\`') }}`;
+    QRCode.toCanvas(qrData, { width: 256, height: 256 }, function (error, canvas) {
+        if (error) {
+            console.error('Error generating QR code:', error);
+            document.getElementById('qrCodeDisplay').innerHTML = '<p class="text-danger">Error generating QR code</p>';
+        } else {
+            document.getElementById('qrCodeDisplay').appendChild(canvas);
+        }
+    });
+});
+
+function downloadQR() {
+    const canvas = document.querySelector('#qrCodeDisplay canvas');
+    if (canvas) {
+        const link = document.createElement('a');
+        link.download = 'shipper-{{ shipper.shipper_code }}-qr.png';
+        link.href = canvas.toDataURL();
+        link.click();
+    }
+}
+</script>
+{% endblock %}

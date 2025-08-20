@@ -1,0 +1,150 @@
+{% extends "base.html" %}
+
+{% block title %}Generate Product Codes - TrustTags{% endblock %}
+
+{% block content %}
+<div class="container-fluid">
+    <!-- Page Header -->
+    <div class="page-header mb-4">
+        <div class="row align-items-center">
+            <div class="col">
+                <h1 class="h3 text-white mb-0">Generate SKU QR Codes</h1>
+                <p class="text-white-50 mb-0">Create QR codes for product tracking</p>
+            </div>
+            <div class="col-auto">
+                <a href="{{ url_for('product_codes') }}" class="btn btn-outline-light">
+                    <i class="fas fa-arrow-left me-1"></i>BACK
+                </a>
+            </div>
+        </div>
+    </div>
+
+    <!-- Generate Form -->
+    <div class="card">
+        <div class="card-header bg-white border-bottom">
+            <h5 class="mb-0">Generate Product Codes</h5>
+        </div>
+        <div class="card-body">
+            <form method="POST" action="{{ url_for('generate_codes') }}">
+                <div class="row">
+                    <div class="col-md-6">
+                        <div class="mb-3">
+                            <label class="form-label">Product ID *</label>
+                            <select class="form-select" name="product_id" id="productSelect" required>
+                                <option value="">-- Select --</option>
+                                {% for product in products %}
+                                <option value="{{ product.id }}">{{ product.name }} ({{ product.sku_id }})</option>
+                                {% endfor %}
+                            </select>
+                        </div>
+                    </div>
+                    <div class="col-md-6">
+                        <div class="mb-3">
+                            <label class="form-label">Batch No. *</label>
+                            <select class="form-select" name="batch_id" id="batchSelect" required>
+                                <option value="">-- Select --</option>
+                            </select>
+                        </div>
+                    </div>
+                    <div class="col-md-6">
+                        <div class="mb-3">
+                            <label class="form-label">Quantity of QR Code *</label>
+                            <input type="number" class="form-control" name="quantity" placeholder="Enter Total number of QR codes" required min="1">
+                        </div>
+                    </div>
+                    <div class="col-md-6">
+                        <div class="mb-3">
+                            <label class="form-label">Percentage(%) of Rejection</label>
+                            <input type="number" class="form-control" name="rejection_percentage" placeholder="Enter Percentage(%) of Rejection" min="0" max="100" step="0.1">
+                        </div>
+                    </div>
+                </div>
+                
+                <div class="row mt-4">
+                    <div class="col-12 text-end">
+                        <button type="submit" class="btn btn-primary btn-lg">
+                            <i class="fas fa-magic me-1"></i>Generate
+                        </button>
+                    </div>
+                </div>
+            </form>
+        </div>
+    </div>
+
+    <!-- Information Card -->
+    <div class="card mt-4">
+        <div class="card-body">
+            <div class="row text-center">
+                <div class="col-md-4">
+                    <div class="info-box">
+                        <i class="fas fa-qrcode fa-2x text-primary mb-2"></i>
+                        <h5>Enter SKU QR code details</h5>
+                        <p class="text-muted small">Select product and batch information to generate unique QR codes</p>
+                    </div>
+                </div>
+                <div class="col-md-4">
+                    <div class="info-box">
+                        <i class="fas fa-chart-pie fa-2x text-success mb-2"></i>
+                        <h5>SKU QR code Details</h5>
+                        <p class="text-muted small">Configure quantity and rejection percentage for accurate tracking</p>
+                    </div>
+                </div>
+                <div class="col-md-4">
+                    <div class="info-box">
+                        <i class="fas fa-download fa-2x text-info mb-2"></i>
+                        <h5>Download xlsx file of codes</h5>
+                        <p class="text-muted small">Export generated codes in Excel format for easy management</p>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+{% endblock %}
+
+{% block scripts %}
+<script>
+document.getElementById('productSelect').addEventListener('change', function() {
+    const productId = this.value;
+    const batchSelect = document.getElementById('batchSelect');
+    
+    // Clear batch options
+    batchSelect.innerHTML = '<option value="">-- Select --</option>';
+    
+    if (productId) {
+        // Fetch batches for selected product
+        fetch(`/api/batches/${productId}`)
+            .then(response => response.json())
+            .then(batches => {
+                batches.forEach(batch => {
+                    const option = document.createElement('option');
+                    option.value = batch.id;
+                    option.textContent = `${batch.batch_no} (${batch.mfg_date} - ${batch.expiry_date})`;
+                    batchSelect.appendChild(option);
+                });
+            })
+            .catch(error => {
+                console.error('Error fetching batches:', error);
+            });
+    }
+});
+
+// Form validation
+document.querySelector('form').addEventListener('submit', function(e) {
+    const quantity = document.querySelector('input[name="quantity"]').value;
+    const rejection = document.querySelector('input[name="rejection_percentage"]').value;
+    
+    if (parseInt(quantity) <= 0) {
+        e.preventDefault();
+        alert('Quantity must be greater than 0');
+        return;
+    }
+    
+    if (rejection && (parseFloat(rejection) < 0 || parseFloat(rejection) > 100)) {
+        e.preventDefault();
+        alert('Rejection percentage must be between 0 and 100');
+        return;
+    }
+});
+</script>
+{% endblock %}

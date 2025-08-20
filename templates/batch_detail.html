@@ -1,0 +1,186 @@
+{% extends "base.html" %}
+
+{% block title %}Stock Report - Batch Detail - TrustTags{% endblock %}
+
+{% block content %}
+<div class="container-fluid">
+    <!-- Page Header -->
+    <div class="page-header mb-4">
+        <div class="row align-items-center">
+            <div class="col">
+                <h1 class="h3 text-white mb-0">Stock Report – Batch Detail</h1>
+                <p class="text-white-50 mb-0">Batch information for {{ product.name }}</p>
+            </div>
+            <div class="col-auto">
+                <button onclick="history.back()" class="btn btn-outline-light">
+                    <i class="fas fa-arrow-left me-1"></i>Back
+                </button>
+            </div>
+        </div>
+    </div>
+
+    <!-- Product Info -->
+    <div class="card mb-4">
+        <div class="card-body">
+            <div class="row align-items-center">
+                <div class="col-md-4">
+                    <h6 class="mb-1">Product ID</h6>
+                    <p class="mb-0"><strong>{{ product.sku_id }}</strong></p>
+                </div>
+                <div class="col-md-4">
+                    <h6 class="mb-1">Total Units</h6>
+                    <p class="mb-0"><strong>{{ batches.total if batches.items else 0 }}</strong></p>
+                </div>
+                <div class="col-md-4">
+                    <h6 class="mb-1">Bin</h6>
+                    <p class="mb-0"><span class="badge bg-success">OK</span></p>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Search Section -->
+    <div class="card mb-4">
+        <div class="card-body">
+            <div class="row g-3">
+                <div class="col-md-6">
+                    <input type="text" class="form-control" placeholder="Search Batch" id="searchInput">
+                </div>
+                <div class="col-md-2">
+                    <select class="form-select">
+                        <option>10</option>
+                        <option>25</option>
+                        <option>50</option>
+                        <option>100</option>
+                    </select>
+                </div>
+                <div class="col-md-4 text-end">
+                    <span class="text-muted">Entries</span>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Batch Detail Table -->
+    <div class="card">
+        <div class="card-body">
+            {% if batches.items %}
+            <div class="table-responsive">
+                <table class="table table-hover" id="batchDetailTable">
+                    <thead class="table-purple">
+                        <tr>
+                            <th>Sr No</th>
+                            <th>Batch No</th>
+                            <th>Units</th>
+                            <th>Mfg. Date</th>
+                            <th>Actions</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        {% for batch in batches.items %}
+                        <tr>
+                            <td>{{ loop.index + (batches.page - 1) * batches.per_page }}</td>
+                            <td><strong>{{ batch.batch_no }}</strong></td>
+                            <td><span class="badge bg-primary">{{ batch.stock_entries|length if batch.stock_entries else 0 }}</span></td>
+                            <td>{{ batch.mfg_date.strftime('%d-%m-%Y') }}</td>
+                            <td>
+                                <button class="btn btn-outline-success btn-sm" 
+                                        onclick="exportBatchStock('{{ batch.id }}')"
+                                        title="Export Batch wise Stock report">
+                                    <i class="fas fa-download"></i>
+                                </button>
+                            </td>
+                        </tr>
+                        {% endfor %}
+                    </tbody>
+                </table>
+            </div>
+
+            <!-- Pagination -->
+            {% if batches.pages > 1 %}
+            <nav aria-label="Page navigation">
+                <ul class="pagination justify-content-center">
+                    {% if batches.has_prev %}
+                    <li class="page-item">
+                        <a class="page-link" href="{{ url_for('batch_detail', product_id=product.id, page=batches.prev_num) }}">Previous</a>
+                    </li>
+                    {% endif %}
+                    
+                    {% for page_num in batches.iter_pages() %}
+                        {% if page_num %}
+                            {% if page_num != batches.page %}
+                            <li class="page-item">
+                                <a class="page-link" href="{{ url_for('batch_detail', product_id=product.id, page=page_num) }}">{{ page_num }}</a>
+                            </li>
+                            {% else %}
+                            <li class="page-item active">
+                                <span class="page-link">{{ page_num }}</span>
+                            </li>
+                            {% endif %}
+                        {% else %}
+                        <li class="page-item disabled">
+                            <span class="page-link">...</span>
+                        </li>
+                        {% endif %}
+                    {% endfor %}
+                    
+                    {% if batches.has_next %}
+                    <li class="page-item">
+                        <a class="page-link" href="{{ url_for('batch_detail', product_id=product.id, page=batches.next_num) }}">Next</a>
+                    </li>
+                    {% endif %}
+                </ul>
+            </nav>
+            {% endif %}
+            {% else %}
+            <div class="text-center py-5">
+                <i class="fas fa-tags fa-3x text-muted mb-3"></i>
+                <h5 class="text-muted">No batches found</h5>
+                <p class="text-muted">No batch records available for this product</p>
+            </div>
+            {% endif %}
+        </div>
+    </div>
+
+    <!-- Information Section -->
+    <div class="row mt-4">
+        <div class="col-12">
+            <div class="card">
+                <div class="card-body text-center py-4">
+                    <div class="info-section">
+                        <i class="fas fa-file-export fa-3x text-success mb-3"></i>
+                        <h5>Export Batch wise Stock report</h5>
+                        <p class="text-muted">Click the download button to export detailed stock reports for each batch</p>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+{% endblock %}
+
+{% block scripts %}
+<script>
+// Search functionality
+document.getElementById('searchInput').addEventListener('input', function() {
+    const searchTerm = this.value.toLowerCase();
+    const tableRows = document.querySelectorAll('#batchDetailTable tbody tr');
+    
+    tableRows.forEach(row => {
+        const text = row.textContent.toLowerCase();
+        row.style.display = text.includes(searchTerm) ? '' : 'none';
+    });
+});
+
+// Export batch stock function
+function exportBatchStock(batchId) {
+    // Create download link for batch stock export
+    const link = document.createElement('a');
+    link.href = `/export-batch-stock/${batchId}`;
+    link.download = `batch_stock_${batchId}.xlsx`;
+    document.body.appendChild(link);
+    link.click();
+    document.body.removeChild(link);
+}
+</script>
+{% endblock %}

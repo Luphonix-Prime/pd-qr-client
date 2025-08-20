@@ -1,0 +1,440 @@
+
+{% extends "base.html" %}
+
+{% block title %}QR Code Scanner - TrustTags{% endblock %}
+
+{% block content %}
+<div class="container-fluid">
+    <!-- Page Header -->
+    <div class="page-header mb-4">
+        <div class="row align-items-center">
+            <div class="col">
+                <h1 class="h3 text-white mb-0">QR Code Scanner</h1>
+                <p class="text-white-50 mb-0">Scan or enter QR code data to view product details</p>
+            </div>
+        </div>
+    </div>
+
+    <!-- Scanner Section -->
+    <div class="card mb-4">
+        <div class="card-header">
+            <h5 class="mb-0">QR Code Scanner</h5>
+        </div>
+        <div class="card-body">
+            <!-- Camera Scanner -->
+            <div class="row mb-4">
+                <div class="col-12">
+                    <div class="text-center">
+                        <button class="btn btn-success btn-lg me-2" onclick="startCamera()">
+                            <i class="fas fa-camera me-1"></i>Start Camera Scanner
+                        </button>
+                        <button class="btn btn-danger btn-lg" onclick="stopCamera()" disabled id="stopCameraBtn">
+                            <i class="fas fa-stop me-1"></i>Stop Camera
+                        </button>
+                    </div>
+                    <div id="cameraContainer" class="mt-3" style="display: none;">
+                        <video id="cameraVideo" style="width: 100%; max-width: 500px; height: auto; border: 2px solid #007bff; border-radius: 8px;"></video>
+                        <canvas id="cameraCanvas" style="display: none;"></canvas>
+                    </div>
+                </div>
+            </div>
+            
+            <!-- Manual Input -->
+            <div class="row">
+                <div class="col-12">
+                    <h6 class="text-muted mb-3">Or Enter QR Code Data Manually:</h6>
+                </div>
+                <div class="col-md-8">
+                    <textarea class="form-control" id="qrDataInput" rows="4" placeholder="Paste QR code data here..."></textarea>
+                </div>
+                <div class="col-md-4">
+                    <button class="btn btn-primary btn-lg w-100" onclick="parseQRData()">
+                        <i class="fas fa-search me-1"></i>Parse QR Data
+                    </button>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Product Details Section -->
+    <div class="card" id="productDetailsCard" style="display: none;">
+        <div class="card-header bg-success text-white">
+            <h5 class="mb-0"><i class="fas fa-check-circle me-2"></i>Product Details</h5>
+        </div>
+        <div class="card-body">
+            <div class="row">
+                <div class="col-md-6">
+                    <div class="product-info">
+                        <h6 class="text-muted mb-3">Product Information</h6>
+                        <div class="mb-3 text-center" id="productImageContainer" style="display: none;">
+                            <img id="productImage" src="" alt="Product Image" class="img-fluid rounded" style="max-height: 200px; max-width: 100%; object-fit: cover; border: 2px solid #dee2e6;">
+                        </div>
+                        <div class="mb-2">
+                            <strong>Product Name:</strong>
+                            <span id="productName" class="ms-2">-</span>
+                        </div>
+                        <div class="mb-2">
+                            <strong>SKU ID:</strong>
+                            <span id="skuId" class="ms-2">-</span>
+                        </div>
+                        <div class="mb-2">
+                            <strong>Product ID:</strong>
+                            <span id="productId" class="ms-2">-</span>
+                        </div>
+                        <div class="mb-2">
+                            <strong>Code Type:</strong>
+                            <span id="codeType" class="badge bg-primary ms-2">-</span>
+                        </div>
+                        <div class="mb-2" id="mrpRow" style="display: none;">
+                            <strong>MRP:</strong>
+                            <span id="mrpValue" class="ms-2 badge bg-success">-</span>
+                        </div>
+                        <div class="mb-2" id="gtinRow" style="display: none;">
+                            <strong>GTIN:</strong>
+                            <span id="gtinValue" class="ms-2">-</span>
+                        </div>
+                        <div class="mb-2" id="registrationRow" style="display: none;">
+                            <strong>Registration No:</strong>
+                            <span id="registrationValue" class="ms-2">-</span>
+                        </div>
+                    </div>
+                </div>
+                <div class="col-md-6">
+                    <div class="batch-info">
+                        <h6 class="text-muted mb-3">Batch Information</h6>
+                        <div class="mb-2">
+                            <strong>Batch No:</strong>
+                            <span id="batchNo" class="ms-2">-</span>
+                        </div>
+                        <div class="mb-2">
+                            <strong>Batch ID:</strong>
+                            <span id="batchId" class="ms-2">-</span>
+                        </div>
+                        <div class="mb-2">
+                            <strong>Manufacturing Date:</strong>
+                            <span id="mfgDate" class="ms-2">-</span>
+                        </div>
+                        <div class="mb-2">
+                            <strong>Expiry Date:</strong>
+                            <span id="expiryDate" class="ms-2">-</span>
+                        </div>
+                    </div>
+                </div>
+            </div>
+            <div class="row mt-4">
+                <div class="col-12">
+                    <h6 class="text-muted mb-3">Additional Information</h6>
+                    <div id="additionalInfo"></div>
+                </div>
+            </div>
+            <div class="row mt-4">
+                <div class="col-12">
+                    <div class="alert alert-info">
+                        <i class="fas fa-info-circle me-2"></i>
+                        <strong>Scan Timestamp:</strong> <span id="scanTimestamp">-</span>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Error Section -->
+    <div class="card" id="errorCard" style="display: none;">
+        <div class="card-header bg-danger text-white">
+            <h5 class="mb-0"><i class="fas fa-exclamation-circle me-2"></i>Invalid QR Code</h5>
+        </div>
+        <div class="card-body">
+            <p class="mb-0">The QR code data is not valid or not in the expected format. Please check the QR code and try again.</p>
+        </div>
+    </div>
+</div>
+
+<script src="https://cdn.jsdelivr.net/npm/jsqr@1.4.0/dist/jsQR.js"></script>
+<script>
+let cameraStream = null;
+let scanningInterval = null;
+
+async function startCamera() {
+    try {
+        const video = document.getElementById('cameraVideo');
+        const cameraContainer = document.getElementById('cameraContainer');
+        const stopBtn = document.getElementById('stopCameraBtn');
+        
+        // Request camera access
+        cameraStream = await navigator.mediaDevices.getUserMedia({ 
+            video: { 
+                facingMode: 'environment' // Use back camera if available
+            } 
+        });
+        
+        video.srcObject = cameraStream;
+        video.play();
+        
+        cameraContainer.style.display = 'block';
+        stopBtn.disabled = false;
+        
+        // Start scanning for QR codes
+        scanningInterval = setInterval(scanForQRCode, 500);
+        
+        document.querySelector('button[onclick="startCamera()"]').disabled = true;
+        
+    } catch (error) {
+        console.error('Error accessing camera:', error);
+        alert('Could not access camera. Please ensure you have given camera permissions and try again.');
+    }
+}
+
+function stopCamera() {
+    const video = document.getElementById('cameraVideo');
+    const cameraContainer = document.getElementById('cameraContainer');
+    const stopBtn = document.getElementById('stopCameraBtn');
+    
+    if (cameraStream) {
+        cameraStream.getTracks().forEach(track => track.stop());
+        cameraStream = null;
+    }
+    
+    if (scanningInterval) {
+        clearInterval(scanningInterval);
+        scanningInterval = null;
+    }
+    
+    video.srcObject = null;
+    cameraContainer.style.display = 'none';
+    stopBtn.disabled = true;
+    document.querySelector('button[onclick="startCamera()"]').disabled = false;
+}
+
+function scanForQRCode() {
+    const video = document.getElementById('cameraVideo');
+    const canvas = document.getElementById('cameraCanvas');
+    const context = canvas.getContext('2d');
+    
+    if (video.readyState === video.HAVE_ENOUGH_DATA) {
+        canvas.width = video.videoWidth;
+        canvas.height = video.videoHeight;
+        context.drawImage(video, 0, 0, canvas.width, canvas.height);
+        
+        const imageData = context.getImageData(0, 0, canvas.width, canvas.height);
+        const code = jsQR(imageData.data, imageData.width, imageData.height);
+        
+        if (code) {
+            // QR code detected
+            document.getElementById('qrDataInput').value = code.data;
+            parseQRData();
+            stopCamera();
+            
+            // Show success message
+            const alert = document.createElement('div');
+            alert.className = 'alert alert-success alert-dismissible fade show mt-3';
+            alert.innerHTML = `
+                <i class="fas fa-check-circle me-2"></i>
+                QR code scanned successfully!
+                <button type="button" class="btn-close" data-bs-dismiss="alert"></button>
+            `;
+            document.querySelector('.container-fluid').insertBefore(alert, document.querySelector('.card'));
+            
+            // Auto-dismiss after 3 seconds
+            setTimeout(() => {
+                if (alert.parentNode) {
+                    alert.remove();
+                }
+            }, 3000);
+        }
+    }
+}
+
+async function parseQRData() {
+    const qrData = document.getElementById('qrDataInput').value.trim();
+    const productDetailsCard = document.getElementById('productDetailsCard');
+    const errorCard = document.getElementById('errorCard');
+    
+    // Hide both cards initially
+    productDetailsCard.style.display = 'none';
+    errorCard.style.display = 'none';
+    
+    if (!qrData) {
+        errorCard.style.display = 'block';
+        return;
+    }
+    
+    try {
+        let data = null;
+        
+        // Try API endpoint first (for online mode)
+        try {
+            const response = await fetch('/api/parse-qr', {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify({ qr_data: qrData })
+            });
+            
+            if (response.ok) {
+                const result = await response.json();
+                if (result.success) {
+                    data = result.data;
+                }
+            }
+        } catch (apiError) {
+            console.log('API parsing failed, trying offline parsing');
+        }
+        
+        // Fallback to client-side parsing
+        if (!data) {
+            if (qrData.startsWith('http')) {
+                // Handle URL format
+                if (qrData.includes('/scan?data=')) {
+                    const urlParts = qrData.split('data=');
+                    if (urlParts.length > 1) {
+                        const encodedData = urlParts[1].split('&')[0].split('#')[0];
+                        const decodedData = decodeURIComponent(encodedData);
+                        data = JSON.parse(decodedData);
+                    }
+                }
+                // Check for fragment fallback data
+                else if (qrData.includes('#')) {
+                    const fragmentData = qrData.split('#')[1];
+                    data = JSON.parse(fragmentData);
+                }
+            } else if (qrData.startsWith('{')) {
+                // Direct JSON data
+                data = JSON.parse(qrData);
+            }
+        }
+        
+        if (!data) {
+            throw new Error('Could not parse QR code data');
+        }
+        
+        // Validate required fields
+        if (!data.type || !data.product_name || !data.batch_no) {
+            throw new Error('Missing required fields');
+        }
+        
+        // Populate product details
+        document.getElementById('productName').textContent = data.product_name || '-';
+        document.getElementById('skuId').textContent = data.sku_id || '-';
+        document.getElementById('productId').textContent = data.product_id || '-';
+        document.getElementById('codeType').textContent = data.type || '-';
+        document.getElementById('batchNo').textContent = data.batch_no || '-';
+        document.getElementById('batchId').textContent = data.batch_id || '-';
+        document.getElementById('mfgDate').textContent = formatDate(data.mfg_date) || '-';
+        document.getElementById('expiryDate').textContent = formatDate(data.expiry_date) || '-';
+        document.getElementById('scanTimestamp').textContent = new Date().toLocaleString();
+        
+        // Handle product image
+        const productImageContainer = document.getElementById('productImageContainer');
+        const productImage = document.getElementById('productImage');
+        if (data.image_url) {
+            productImage.src = data.image_url;
+            productImageContainer.style.display = 'block';
+        } else {
+            productImageContainer.style.display = 'none';
+        }
+        
+        // Handle additional product details
+        const mrpRow = document.getElementById('mrpRow');
+        const mrpValue = document.getElementById('mrpValue');
+        if (data.mrp) {
+            mrpValue.textContent = `₹${data.mrp}`;
+            mrpRow.style.display = 'block';
+        } else {
+            mrpRow.style.display = 'none';
+        }
+        
+        const gtinRow = document.getElementById('gtinRow');
+        const gtinValue = document.getElementById('gtinValue');
+        if (data.gtin) {
+            gtinValue.textContent = data.gtin;
+            gtinRow.style.display = 'block';
+        } else {
+            gtinRow.style.display = 'none';
+        }
+        
+        const registrationRow = document.getElementById('registrationRow');
+        const registrationValue = document.getElementById('registrationValue');
+        if (data.registration_no) {
+            registrationValue.textContent = data.registration_no;
+            registrationRow.style.display = 'block';
+        } else {
+            registrationRow.style.display = 'none';
+        }
+        
+        // Handle additional information
+        const additionalInfo = document.getElementById('additionalInfo');
+        additionalInfo.innerHTML = '';
+        
+        if (data.quantity) {
+            additionalInfo.innerHTML += `<div class="mb-2"><strong>Quantity:</strong> <span class="badge bg-secondary ms-2">${data.quantity}</span></div>`;
+        }
+        
+        if (data.total_codes) {
+            additionalInfo.innerHTML += `<div class="mb-2"><strong>Total Codes:</strong> <span class="badge bg-secondary ms-2">${data.total_codes}</span></div>`;
+        }
+        
+        if (data.rejection_percentage) {
+            additionalInfo.innerHTML += `<div class="mb-2"><strong>Rejection %:</strong> <span class="badge bg-warning ms-2">${data.rejection_percentage}%</span></div>`;
+        }
+        
+        if (data.gross_weight) {
+            additionalInfo.innerHTML += `<div class="mb-2"><strong>Gross Weight:</strong> <span class="badge bg-info ms-2">${data.gross_weight} kg</span></div>`;
+        }
+        
+        if (data.timestamp) {
+            additionalInfo.innerHTML += `<div class="mb-2"><strong>Generated:</strong> <span class="text-muted ms-2">${formatTimestamp(data.timestamp)}</span></div>`;
+        }
+        
+        productDetailsCard.style.display = 'block';
+        
+    } catch (error) {
+        console.error('Error parsing QR data:', error);
+        errorCard.style.display = 'block';
+    }
+}
+
+function formatDate(dateString) {
+    if (!dateString) return '-';
+    try {
+        const date = new Date(dateString);
+        return date.toLocaleDateString();
+    } catch (error) {
+        return dateString;
+    }
+}
+
+function formatTimestamp(timestamp) {
+    if (!timestamp) return '-';
+    try {
+        // Parse timestamp format: YYYYMMDDHHMMSS
+        const year = timestamp.substring(0, 4);
+        const month = timestamp.substring(4, 6);
+        const day = timestamp.substring(6, 8);
+        const hour = timestamp.substring(8, 10);
+        const minute = timestamp.substring(10, 12);
+        const second = timestamp.substring(12, 14);
+        
+        const date = new Date(year, month - 1, day, hour, minute, second);
+        return date.toLocaleString();
+    } catch (error) {
+        return timestamp;
+    }
+}
+
+// Auto-parse if data is in URL params or passed from server
+window.addEventListener('DOMContentLoaded', function() {
+    // Check if QR data was passed from server (for external scanning)
+    {% if qr_data %}
+    document.getElementById('qrDataInput').value = {{ qr_data|tojson }};
+    parseQRData();
+    {% else %}
+    // Check URL parameters as fallback
+    const urlParams = new URLSearchParams(window.location.search);
+    const qrData = urlParams.get('data');
+    if (qrData) {
+        document.getElementById('qrDataInput').value = decodeURIComponent(qrData);
+        parseQRData();
+    }
+    {% endif %}
+});
+</script>
+{% endblock %}

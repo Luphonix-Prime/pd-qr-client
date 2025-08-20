@@ -1,0 +1,123 @@
+{% extends "base.html" %}
+
+{% block title %}Generate Second Level Codes - TrustTags{% endblock %}
+
+{% block content %}
+<div class="container-fluid">
+    <!-- Page Header -->
+    <div class="page-header mb-4">
+        <div class="row align-items-center">
+            <div class="col">
+                <h1 class="h3 text-white mb-0">Generate 2nd Level Inner Codes</h1>
+                <p class="text-white-50 mb-0">Create second level inner QR codes for advanced tracking</p>
+            </div>
+            <div class="col-auto">
+                <a href="{{ url_for('second_level_codes') }}" class="btn btn-outline-light">
+                    <i class="fas fa-arrow-left me-1"></i>BACK
+                </a>
+            </div>
+        </div>
+    </div>
+
+    <!-- Generate Form -->
+    <div class="card">
+        <div class="card-header bg-white border-bottom">
+            <h5 class="mb-0">Generate 2nd Inner Codes</h5>
+        </div>
+        <div class="card-body">
+            <form method="POST" action="{{ url_for('generate_second_level_codes') }}">
+                <div class="row">
+                    <div class="col-md-6">
+                        <div class="mb-3">
+                            <label class="form-label">Product ID *</label>
+                            <select class="form-select" name="product_id" id="productSelect" required>
+                                <option value="">-- Select --</option>
+                                {% for product in products %}
+                                <option value="{{ product.id }}">{{ product.name }} ({{ product.sku_id }})</option>
+                                {% endfor %}
+                            </select>
+                        </div>
+                    </div>
+                    <div class="col-md-6">
+                        <div class="mb-3">
+                            <label class="form-label">Batch No. *</label>
+                            <select class="form-select" name="batch_id" id="batchSelect" required>
+                                <option value="">-- Select --</option>
+                            </select>
+                        </div>
+                    </div>
+                    <div class="col-md-6">
+                        <div class="mb-3">
+                            <label class="form-label">Quantity of 2nd Inner QR Code *</label>
+                            <input type="number" class="form-control" name="quantity" placeholder="1" required min="1">
+                        </div>
+                    </div>
+                </div>
+                
+                <div class="row mt-4">
+                    <div class="col-12 text-end">
+                        <button type="submit" class="btn btn-primary btn-lg">
+                            <i class="fas fa-magic me-1"></i>Generate
+                        </button>
+                    </div>
+                </div>
+            </form>
+        </div>
+    </div>
+
+    <!-- Information Sections -->
+    <div class="row mt-4">
+        <div class="col-md-6">
+            <div class="card h-100">
+                <div class="card-body text-center">
+                    <div class="info-section">
+                        <i class="fas fa-layers fa-3x text-primary mb-3"></i>
+                        <h5>List of generated 2nd Level Inner Codes</h5>
+                        <p class="text-muted">Manage and track all second level inner codes for comprehensive product hierarchy</p>
+                    </div>
+                </div>
+            </div>
+        </div>
+        <div class="col-md-6">
+            <div class="card h-100">
+                <div class="card-body text-center">
+                    <div class="info-section">
+                        <i class="fas fa-download fa-3x text-success mb-3"></i>
+                        <h5>Download 2nd Level Inner codes in xlsx format</h5>
+                        <p class="text-muted">Export generated second level codes for detailed analysis and reporting</p>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+{% endblock %}
+
+{% block scripts %}
+<script>
+document.getElementById('productSelect').addEventListener('change', function() {
+    const productId = this.value;
+    const batchSelect = document.getElementById('batchSelect');
+    
+    // Clear batch options
+    batchSelect.innerHTML = '<option value="">-- Select --</option>';
+    
+    if (productId) {
+        // Fetch batches for selected product
+        fetch(`/api/batches/${productId}`)
+            .then(response => response.json())
+            .then(batches => {
+                batches.forEach(batch => {
+                    const option = document.createElement('option');
+                    option.value = batch.id;
+                    option.textContent = `${batch.batch_no} (${batch.mfg_date} - ${batch.expiry_date})`;
+                    batchSelect.appendChild(option);
+                });
+            })
+            .catch(error => {
+                console.error('Error fetching batches:', error);
+            });
+    }
+});
+</script>
+{% endblock %}

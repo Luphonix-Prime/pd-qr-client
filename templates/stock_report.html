@@ -1,0 +1,279 @@
+{% extends "base.html" %}
+
+{% block title %}Stock Report - Main - TrustTags{% endblock %}
+
+{% block content %}
+<div class="container-fluid">
+    <!-- Page Header -->
+    <div class="page-header mb-4">
+        <div class="row align-items-center">
+            <div class="col">
+                <h1 class="h3 text-white mb-0">Stock Report - Main</h1>
+                <p class="text-white-50 mb-0">View comprehensive stock reports by location</p>
+            </div>
+        </div>
+    </div>
+
+    <!-- Stock Summary Cards -->
+    <div class="row mb-4">
+        <div class="col-md-3">
+            <div class="card bg-primary text-white">
+                <div class="card-body">
+                    <div class="d-flex justify-content-between">
+                        <div>
+                            <h6 class="card-title">Total Locations</h6>
+                            <h3>{{ factories.total }}</h3>
+                        </div>
+                        <div class="align-self-center">
+                            <i class="fas fa-building fa-2x"></i>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+        <div class="col-md-3">
+            <div class="card bg-success text-white">
+                <div class="card-body">
+                    <div class="d-flex justify-content-between">
+                        <div>
+                            <h6 class="card-title">Active Stock</h6>
+                            <h3>{{ total_stock or 0 }}</h3>
+                        </div>
+                        <div class="align-self-center">
+                            <i class="fas fa-boxes fa-2x"></i>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+        <div class="col-md-3">
+            <div class="card bg-warning text-white">
+                <div class="card-body">
+                    <div class="d-flex justify-content-between">
+                        <div>
+                            <h6 class="card-title">In Transit</h6>
+                            <h3>{{ transit_stock or 0 }}</h3>
+                        </div>
+                        <div class="align-self-center">
+                            <i class="fas fa-truck fa-2x"></i>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+        <div class="col-md-3">
+            <div class="card bg-info text-white">
+                <div class="card-body">
+                    <div class="d-flex justify-content-between">
+                        <div>
+                            <h6 class="card-title">Total Products</h6>
+                            <h3>{{ total_products or 0 }}</h3>
+                        </div>
+                        <div class="align-self-center">
+                            <i class="fas fa-cube fa-2x"></i>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Search Section -->
+    <div class="card mb-4">
+        <div class="card-body">
+            <div class="row g-3">
+                <div class="col-md-6">
+                    <input type="text" class="form-control" placeholder="Search Location" id="searchInput">
+                </div>
+                <div class="col-md-3">
+                    <select class="form-select" id="statusFilter">
+                        <option value="">All Status</option>
+                        <option value="OK">OK</option>
+                        <option value="intransit">In Transit</option>
+                    </select>
+                </div>
+                <div class="col-md-3 text-end">
+                    <button class="btn btn-success" onclick="exportAllStock()">
+                        <i class="fas fa-download me-1"></i>Export All
+                    </button>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Stock Report Table -->
+    <div class="card">
+        <div class="card-body">
+            {% if factories.items %}
+            <div class="table-responsive">
+                <table class="table table-hover" id="stockReportTable">
+                    <thead class="table-purple">
+                        <tr>
+                            <th>Sr No</th>
+                            <th>Location Name</th>
+                            <th>Mobile No</th>
+                            <th>City</th>
+                            <th>State</th>
+                            <th>Total Stock</th>
+                            <th>Stock Status</th>
+                            <th>Actions</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        {% for factory in factories.items %}
+                        <tr>
+                            <td>{{ loop.index + (factories.page - 1) * factories.per_page }}</td>
+                            <td><strong>{{ factory.name }}</strong></td>
+                            <td>{{ factory.mobile_no or '-' }}</td>
+                            <td>{{ factory.city or '-' }}</td>
+                            <td>{{ factory.state or '-' }}</td>
+                            <td>
+                                <span class="badge bg-info">
+                                    {{ factory.total_stock or 0 }} units
+                                </span>
+                            </td>
+                            <td>
+                                {% if factory.total_stock > 0 %}
+                                    <span class="badge bg-success">Active</span>
+                                {% else %}
+                                    <span class="badge bg-secondary">Empty</span>
+                                {% endif %}
+                            </td>
+                            <td>
+                                <div class="btn-group" role="group">
+                                    <a href="{{ url_for('stock_detail', factory_id=factory.id) }}" 
+                                       class="btn btn-outline-primary btn-sm" 
+                                       title="View stock details">
+                                        <i class="fas fa-eye"></i>
+                                    </a>
+                                    <button class="btn btn-outline-success btn-sm" 
+                                            onclick="exportFactoryStock('{{ factory.id }}')"
+                                            title="Export factory stock">
+                                        <i class="fas fa-download"></i>
+                                    </button>
+                                </div>
+                            </td>
+                        </tr>
+                        {% endfor %}
+                    </tbody>
+                </table>
+            </div>
+
+            <!-- Pagination -->
+            {% if factories.pages > 1 %}
+            <nav aria-label="Page navigation">
+                <ul class="pagination justify-content-center">
+                    {% if factories.has_prev %}
+                    <li class="page-item">
+                        <a class="page-link" href="{{ url_for('stock_report', page=factories.prev_num) }}">Previous</a>
+                    </li>
+                    {% endif %}
+                    
+                    {% for page_num in factories.iter_pages() %}
+                        {% if page_num %}
+                            {% if page_num != factories.page %}
+                            <li class="page-item">
+                                <a class="page-link" href="{{ url_for('stock_report', page=page_num) }}">{{ page_num }}</a>
+                            </li>
+                            {% else %}
+                            <li class="page-item active">
+                                <span class="page-link">{{ page_num }}</span>
+                            </li>
+                            {% endif %}
+                        {% else %}
+                        <li class="page-item disabled">
+                            <span class="page-link">...</span>
+                        </li>
+                        {% endif %}
+                    {% endfor %}
+                    
+                    {% if factories.has_next %}
+                    <li class="page-item">
+                        <a class="page-link" href="{{ url_for('stock_report', page=factories.next_num) }}">Next</a>
+                    </li>
+                    {% endif %}
+                </ul>
+            </nav>
+            {% endif %}
+            {% else %}
+            <div class="text-center py-5">
+                <i class="fas fa-chart-bar fa-3x text-muted mb-3"></i>
+                <h5 class="text-muted">No locations found</h5>
+                <p class="text-muted">Add factories/locations to view stock reports</p>
+                <button class="btn btn-primary" data-bs-toggle="modal" data-bs-target="#addFactoryModal">
+                    <i class="fas fa-plus me-1"></i>Add Location
+                </button>
+            </div>
+            {% endif %}
+        </div>
+    </div>
+
+    <!-- Information Section -->
+    <div class="row mt-4">
+        <div class="col-12">
+            <div class="card">
+                <div class="card-body text-center py-4">
+                    <div class="info-section">
+                        <i class="fas fa-chart-line fa-3x text-primary mb-3"></i>
+                        <h5>View stock report</h5>
+                        <p class="text-muted">Click on the eye icon to view detailed stock information for each location</p>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+{% endblock %}
+
+{% block scripts %}
+<script>
+// Search functionality
+document.getElementById('searchInput').addEventListener('input', function() {
+    filterTable();
+});
+
+// Status filter functionality
+document.getElementById('statusFilter').addEventListener('change', function() {
+    filterTable();
+});
+
+function filterTable() {
+    const searchTerm = document.getElementById('searchInput').value.toLowerCase();
+    const statusFilter = document.getElementById('statusFilter').value.toLowerCase();
+    const tableRows = document.querySelectorAll('#stockReportTable tbody tr');
+    
+    tableRows.forEach(row => {
+        const text = row.textContent.toLowerCase();
+        const statusMatch = statusFilter === '' || text.includes(statusFilter);
+        const searchMatch = text.includes(searchTerm);
+        
+        row.style.display = (statusMatch && searchMatch) ? '' : 'none';
+    });
+}
+
+// Export functions
+function exportFactoryStock(factoryId) {
+    const link = document.createElement('a');
+    link.href = `/export-factory-stock/${factoryId}`;
+    document.body.appendChild(link);
+    link.click();
+    document.body.removeChild(link);
+}
+
+function exportAllStock() {
+    const link = document.createElement('a');
+    link.href = '/export-all-stock';
+    document.body.appendChild(link);
+    link.click();
+    document.body.removeChild(link);
+}
+
+function exportAllBatches() {
+    const link = document.createElement('a');
+    link.href = '/export-all-batches';
+    document.body.appendChild(link);
+    link.click();
+    document.body.removeChild(link);
+}
+</script>
+{% endblock %}

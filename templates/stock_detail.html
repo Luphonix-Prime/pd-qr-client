@@ -1,0 +1,155 @@
+{% extends "base.html" %}
+
+{% block title %}Stock Report - SKU Detail - TrustTags{% endblock %}
+
+{% block content %}
+<div class="container-fluid">
+    <!-- Page Header -->
+    <div class="page-header mb-4">
+        <div class="row align-items-center">
+            <div class="col">
+                <h1 class="h3 text-white mb-0">Stock Report – SKU Detail</h1>
+                <p class="text-white-50 mb-0">Detailed stock information for {{ factory.name }}</p>
+            </div>
+            <div class="col-auto">
+                <a href="{{ url_for('stock_report') }}" class="btn btn-outline-light">
+                    <i class="fas fa-arrow-left me-1"></i>Back
+                </a>
+            </div>
+        </div>
+    </div>
+
+    <!-- Location Info -->
+    <div class="card mb-4">
+        <div class="card-body">
+            <div class="row">
+                <div class="col">
+                    <h6 class="mb-1">Location: <strong>{{ factory.name }}</strong></h6>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Search Section -->
+    <div class="card mb-4">
+        <div class="card-body">
+            <div class="row g-3">
+                <div class="col-md-6">
+                    <input type="text" class="form-control" placeholder="Search Product ID" id="searchInput">
+                </div>
+                <div class="col-md-2">
+                    <select class="form-select">
+                        <option>10</option>
+                        <option>25</option>
+                        <option>50</option>
+                        <option>100</option>
+                    </select>
+                </div>
+                <div class="col-md-4 text-end">
+                    <span class="text-muted">Entries</span>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Stock Detail Table -->
+    <div class="card">
+        <div class="card-body">
+            {% if stock_items.items %}
+            <div class="table-responsive">
+                <table class="table table-hover" id="stockDetailTable">
+                    <thead class="table-purple">
+                        <tr>
+                            <th>Sr No</th>
+                            <th>SKU ID</th>
+                            <th>Units</th>
+                            <th>Bin</th>
+                            <th>Action</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        {% for stock in stock_items.items %}
+                        <tr>
+                            <td>{{ loop.index + (stock_items.page - 1) * stock_items.per_page }}</td>
+                            <td><strong>{{ stock.product.sku_id if stock.product else 'N/A' }}</strong></td>
+                            <td><span class="badge bg-primary">{{ stock.units }}</span></td>
+                            <td>
+                                <span class="badge bg-{{ 'success' if stock.bin_status == 'OK' else 'warning' }}">
+                                    {{ stock.bin_status }}
+                                </span>
+                            </td>
+                            <td>
+                                <a href="{{ url_for('batch_detail', product_id=stock.product_id) }}" 
+                                   class="btn btn-outline-primary btn-sm" 
+                                   title="View batch details">
+                                    <i class="fas fa-eye"></i>
+                                </a>
+                            </td>
+                        </tr>
+                        {% endfor %}
+                    </tbody>
+                </table>
+            </div>
+
+            <!-- Pagination -->
+            {% if stock_items.pages > 1 %}
+            <nav aria-label="Page navigation">
+                <ul class="pagination justify-content-center">
+                    {% if stock_items.has_prev %}
+                    <li class="page-item">
+                        <a class="page-link" href="{{ url_for('stock_detail', factory_id=factory.id, page=stock_items.prev_num) }}">Previous</a>
+                    </li>
+                    {% endif %}
+                    
+                    {% for page_num in stock_items.iter_pages() %}
+                        {% if page_num %}
+                            {% if page_num != stock_items.page %}
+                            <li class="page-item">
+                                <a class="page-link" href="{{ url_for('stock_detail', factory_id=factory.id, page=page_num) }}">{{ page_num }}</a>
+                            </li>
+                            {% else %}
+                            <li class="page-item active">
+                                <span class="page-link">{{ page_num }}</span>
+                            </li>
+                            {% endif %}
+                        {% else %}
+                        <li class="page-item disabled">
+                            <span class="page-link">...</span>
+                        </li>
+                        {% endif %}
+                    {% endfor %}
+                    
+                    {% if stock_items.has_next %}
+                    <li class="page-item">
+                        <a class="page-link" href="{{ url_for('stock_detail', factory_id=factory.id, page=stock_items.next_num) }}">Next</a>
+                    </li>
+                    {% endif %}
+                </ul>
+            </nav>
+            {% endif %}
+            {% else %}
+            <div class="text-center py-5">
+                <i class="fas fa-box-open fa-3x text-muted mb-3"></i>
+                <h5 class="text-muted">No stock items found</h5>
+                <p class="text-muted">No stock records available for this location</p>
+            </div>
+            {% endif %}
+        </div>
+    </div>
+</div>
+{% endblock %}
+
+{% block scripts %}
+<script>
+// Search functionality
+document.getElementById('searchInput').addEventListener('input', function() {
+    const searchTerm = this.value.toLowerCase();
+    const tableRows = document.querySelectorAll('#stockDetailTable tbody tr');
+    
+    tableRows.forEach(row => {
+        const text = row.textContent.toLowerCase();
+        row.style.display = text.includes(searchTerm) ? '' : 'none';
+    });
+});
+</script>
+{% endblock %}
