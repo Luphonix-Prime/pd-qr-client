@@ -549,6 +549,13 @@ def export_all_stock():
 @require_login
 def add_product():
     try:
+        # Check if SKU ID already exists
+        sku_id = request.form['sku_id']
+        existing_product = Product.query.filter_by(sku_id=sku_id).first()
+        if existing_product:
+            flash(f'A product with SKU ID "{sku_id}" already exists. Please use a different SKU ID.', 'error')
+            return redirect(url_for('dashboard'))
+
         product_id = generate_product_id()
         
         # Handle image upload
@@ -561,7 +568,7 @@ def add_product():
         product = Product(
             id=product_id,
             name=request.form['name'],
-            sku_id=request.form['sku_id'],
+            sku_id=sku_id,
             gtin=request.form.get('gtin'),
             mrp=float(request.form['mrp']) if request.form.get('mrp') else None,
             registration_no=request.form.get('registration_no'),
