@@ -18,7 +18,8 @@ def generate_qr_code(data):
     qr.add_data(data)
     qr.make(fit=True)
     
-    img = qrcode.make_image(fill_color="black", back_color="white")
+    # Use the QR object we created instead of making a new one
+    img = qr.make_image(fill_color="black", back_color="white")
     buffered = BytesIO()
     img.save(buffered, format="PNG")
     img_str = base64.b64encode(buffered.getvalue()).decode()
