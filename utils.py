@@ -19,6 +19,16 @@ def generate_qr_code(data):
     qr.make(fit=True)
     
     # Use the QR object we created instead of making a new one
+    img = qrcode.QRCode(
+        version=3,  # Increased version for better scanning
+        error_correction=qrcode.constants.ERROR_CORRECT_M,  # Medium error correction
+        box_size=8,  # Optimal size for scanning
+        border=4,
+    )
+    qr.add_data(data)
+    qr.make(fit=True)
+    
+    # Use the QR object we created instead of making a new one
     img = qr.make_image(fill_color="black", back_color="white")
     buffered = BytesIO()
     img.save(buffered, format="PNG")
@@ -30,9 +40,8 @@ def generate_scannable_qr_data(code_type, product, batch, additional_data=None, 
     import json
     from urllib.parse import quote
     
-    # If no base_url provided, use production URL
-    if not base_url or base_url.startswith('http://127.0.0.1'):
-        base_url = "https://translytics-uu9d.onrender.com"
+    # Always use production URL for QR codes
+    base_url = "https://translytics-uu9d.onrender.com"
     
     qr_data = {
         "type": code_type,
@@ -57,11 +66,10 @@ def generate_scannable_qr_data(code_type, product, batch, additional_data=None, 
     
     # Create a comprehensive QR code that works both as URL and standalone data
     json_data = json.dumps(qr_data, separators=(',', ':'))
-    
-    # For external scanners, generate a direct URL to the product details
     encoded_data = quote(json_data)
-    # Create a URL that also contains the raw data as a fallback
-    return f"{base_url}/scan?data={encoded_data}#{json_data}"
+    
+    # Create a URL that points to the production server
+    return f"{base_url}/scan?data={encoded_data}"
 
 def save_uploaded_image(file, product_id):
     """Save uploaded image and return the URL"""
