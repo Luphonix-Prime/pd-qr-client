@@ -18,7 +18,7 @@ def generate_qr_code(data):
     qr.add_data(data)
     qr.make(fit=True)
     
-    img = qr.make_image(fill_color="black", back_color="white")
+    img = qrcode.make_image(fill_color="black", back_color="white")
     buffered = BytesIO()
     img.save(buffered, format="PNG")
     img_str = base64.b64encode(buffered.getvalue()).decode()
@@ -28,6 +28,10 @@ def generate_scannable_qr_data(code_type, product, batch, additional_data=None, 
     """Generate structured QR code data that's easily scannable"""
     import json
     from urllib.parse import quote
+    
+    # If no base_url provided, use production URL
+    if not base_url or base_url.startswith('http://127.0.0.1'):
+        base_url = "https://translytics-uu9d.onrender.com"
     
     qr_data = {
         "type": code_type,
@@ -54,12 +58,9 @@ def generate_scannable_qr_data(code_type, product, batch, additional_data=None, 
     json_data = json.dumps(qr_data, separators=(',', ':'))
     
     # For external scanners, generate a direct URL to the product details
-    if base_url:
-        encoded_data = quote(json_data)
-        # Create a URL that also contains the raw data as a fallback
-        return f"{base_url}/scan?data={encoded_data}#{json_data}"
-    
-    return json_data
+    encoded_data = quote(json_data)
+    # Create a URL that also contains the raw data as a fallback
+    return f"{base_url}/scan?data={encoded_data}#{json_data}"
 
 def save_uploaded_image(file, product_id):
     """Save uploaded image and return the URL"""
