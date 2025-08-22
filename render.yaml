@@ -1,6 +1,6 @@
 services:
   - type: web
-    name: tranlytics
+    name: translytics
     env: python
     buildCommand: pip install -r requirements.txt
     startCommand: gunicorn main:app
@@ -9,3 +9,5 @@ services:
         value: 3.9.0
       - key: FLASK_ENV
         value: production
+      - key: GUNICORN_CMD_ARGS
+        value: "--timeout 120 --workers 2"

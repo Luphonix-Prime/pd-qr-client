@@ -4,4 +4,6 @@ Flask-Login
 qrcode
 openpyxl
 Pillow
+gunicorn
+psycopg2-binary
 jsQR
