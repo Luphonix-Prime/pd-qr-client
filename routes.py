@@ -670,9 +670,6 @@ def parse_qr_code():
                 parsed_url = urlparse(qr_text)
                 qr_data = parse_qs(parsed_url.query).get('data', [''])[0]
                 qr_text = unquote(qr_data)
-            # Check for fragment (fallback data)
-            elif '#' in qr_text:
-                qr_text = qr_text.split('#')[1]
         
         # Parse JSON data
         try:
@@ -680,36 +677,34 @@ def parse_qr_code():
         except json.JSONDecodeError:
             return jsonify({'error': 'Invalid QR code format'}), 400
         
-        # Validate required fields
+        # Validate required fields and code type
         required_fields = ['type', 'product_id', 'batch_id']
         if not all(field in qr_data for field in required_fields):
             return jsonify({'error': 'QR code missing required product information'}), 400
-        
-        # Get additional product and batch info from database
+            
+        # Get the correct code based on type
+        code_type = qr_data.get('type')
+        if code_type == 'FIRST_LEVEL':
+            code = FirstLevelCode.query.filter_by(qr_code=qr_text).first()
+        elif code_type == 'SECOND_LEVEL':
+            code = SecondLevelCode.query.filter_by(qr_code=qr_text).first()
+        else:
+            return jsonify({'error': 'Invalid code type'}), 400
+            
+        if not code:
+            return jsonify({'error': 'Code not found in database'}), 404
+            
+        # Get additional product and batch info
         product = Product.query.get(qr_data['product_id'])
         batch = Batch.query.get(qr_data['batch_id'])
         
         if not product or not batch:
-            return jsonify({'error': 'Product or batch not found in database'}), 404
-        
-        # Enhance QR data with current database info
-        enhanced_data = qr_data.copy()
-        enhanced_data.update({
-            'current_product_name': product.name,
-            'current_batch_status': batch.qa_status,
-            'factory_name': batch.factory.name if batch.factory else 'Unknown',
-            'scan_timestamp': datetime.now().isoformat(),
-            'data_source': 'database_verified'
-        })
-        
-        return jsonify({
-            'success': True,
-            'data': enhanced_data,
-            'message': 'QR code parsed successfully'
-        })
+            return jsonify({'error': 'Product or batch not found'}), 404
+            
+        return jsonify(qr_data)
         
     except Exception as e:
-        return jsonify({'error': f'Failed to parse QR code: {str(e)}'}), 500
+        return jsonify({'error': str(e)}), 500
 
 # API endpoints for dynamic data
 @app.route('/api/batches/<product_id>')

@@ -18,17 +18,6 @@ def generate_qr_code(data):
     qr.add_data(data)
     qr.make(fit=True)
     
-    # Use the QR object we created instead of making a new one
-    img = qrcode.QRCode(
-        version=3,  # Increased version for better scanning
-        error_correction=qrcode.constants.ERROR_CORRECT_M,  # Medium error correction
-        box_size=8,  # Optimal size for scanning
-        border=4,
-    )
-    qr.add_data(data)
-    qr.make(fit=True)
-    
-    # Use the QR object we created instead of making a new one
     img = qr.make_image(fill_color="black", back_color="white")
     buffered = BytesIO()
     img.save(buffered, format="PNG")
