@@ -1,10 +1,7 @@
 from datetime import datetime
-from app import db
-from flask_dance.consumer.storage.sqla import OAuthConsumerMixin
 from flask_login import UserMixin
-from sqlalchemy import UniqueConstraint
+from app import db
 
-# User model for authentication
 class User(UserMixin, db.Model):
     __tablename__ = 'users'
     id = db.Column(db.Integer, primary_key=True)
