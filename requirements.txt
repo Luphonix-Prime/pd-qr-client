@@ -6,4 +6,3 @@ openpyxl
 Pillow
 gunicorn
 psycopg2-binary
-jsQR
