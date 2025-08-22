@@ -37,19 +37,6 @@ class User(UserMixin, db.Model):
         else:
             return self.email.split('@')[0]
 
-# OAuth model for Replit Auth
-class OAuth(OAuthConsumerMixin, db.Model):
-    user_id = db.Column(db.String, db.ForeignKey(User.id))
-    browser_session_key = db.Column(db.String, nullable=False)
-    user = db.relationship(User)
-
-    __table_args__ = (UniqueConstraint(
-        'user_id',
-        'browser_session_key',
-        'provider',
-        name='uq_user_browser_session_key_provider',
-    ),)
-
 # Factory/Location model
 class Factory(db.Model):
     __tablename__ = 'factories'
